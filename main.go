@@ -7,6 +7,8 @@ import (
 )
 
 func main(){
+
+	args = os.Args[:1]
 	fmt.Println("Hello world")
 	cmd := exec.Command("ls", "-la")
 	cmd.Stdout = os.Stdout
