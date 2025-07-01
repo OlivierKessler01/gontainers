@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-func main(){
+func main() {
 
 	args = os.Args[:1]
 	fmt.Println("Hello world")
