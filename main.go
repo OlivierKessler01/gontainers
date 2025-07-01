@@ -8,10 +8,9 @@ import (
 
 func main() {
 	var args []string 
-	args = os.Args[:1]
-	fmt.Println(args)
-	fmt.Println("Hello world")
-	//cmd := exec.Command(args[0], args[1:]...)
+	args = os.Args[1:]
+	fmt.Println("Program starting")
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
