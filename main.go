@@ -2,20 +2,21 @@ package main
 
 import (
 	"fmt"
+	"olivierkessler01/gontainers/process"
 	"os"
-	"os/exec"
+	"runtime"
 )
 
+
 func main() {
-	var args []string 
+	funcMap := map[string]func(args []string) bool{
+		"List":  process.List,
+	}
+
+	var args []string
+	runtime.Breakpoint()
 	args = os.Args[1:]
 	fmt.Println("Program starting")
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
+	funcMap[args[0]](args[1:])
+	fmt.Println("Program finished")
 }
