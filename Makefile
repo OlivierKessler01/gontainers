@@ -1,4 +1,3 @@
-
 .PHONY:
 setup_hooks:
 	git config core.hooksPath .githooks
@@ -8,8 +7,9 @@ setup_hooks:
 build:
 	@rm main || true
 	@go build  main.go 
+	./main list ls -a
 
 .PHONY:
 debug: 
-	~/go/bin/dlv debug ./main.go -- ls -a
+	~/go/bin/dlv debug ./main.go -- list ls -a
 
