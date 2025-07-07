@@ -9,6 +9,7 @@ import (
 
 func main() {
 	funcMap := map[string]func(args []string) bool{
+		"run": process.Run,
 		"list": process.List,
 	}
 
