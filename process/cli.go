@@ -10,27 +10,32 @@ import (
 
 
 //Run a container
-func Run(args []string) ([]TrackedProcess, error) {
+func Run(args []string) error {
+	var cgroups []string
+	var namespaces []string
+
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
 	//runtime.Breakpoint()
 
-	err := cmd.Run()
+	err := cmd.Start()
 	if err != nil {
 		panic(err)
 	}
-	var processes []TrackedProcess
-	processes = append(processes, TrackedProcess{})
-	return processes, err 
+	Add(cmd.Process.Pid, cgroups, namespaces)
+	Save()
+
+	return err 
 }
 
 //List containers
-func List(args []string) ([]TrackedProcess, error) {
+func List(args []string) error {
 
     files, err := os.ReadDir("/proc")
     if err != nil {
-        return nil, err
+        return err
     }
     var pids []TrackedProcess
 	//runtime.Breakpoint()
@@ -44,7 +49,7 @@ func List(args []string) ([]TrackedProcess, error) {
     }
 	
 	fmt.Println(pids)
-    return pids, nil
+    return nil
 }
 
 

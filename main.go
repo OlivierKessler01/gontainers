@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	funcMap := map[string]func(args []string) ([]process.TrackedProcess, error){
+	funcMap := map[string]func(args []string) error {
 		"run":  process.Run,
 		"list": process.List,
 	}
