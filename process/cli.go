@@ -4,13 +4,10 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"fmt"
+	//"runtime"
 )
 
-type TrackedProcess struct {
-	PID int
-	cgroups []string
-	namespaces []string
-}
 
 //Run a container
 func Run(args []string) ([]TrackedProcess, error) {
@@ -30,12 +27,13 @@ func Run(args []string) ([]TrackedProcess, error) {
 
 //List containers
 func List(args []string) ([]TrackedProcess, error) {
+
     files, err := os.ReadDir("/proc")
     if err != nil {
         return nil, err
     }
-
     var pids []TrackedProcess
+	//runtime.Breakpoint()
     for _, f := range files {
         if f.IsDir() {
             pid, err := strconv.Atoi(f.Name())
@@ -44,7 +42,8 @@ func List(args []string) ([]TrackedProcess, error) {
             }
         }
     }
-
+	
+	fmt.Println(pids)
     return pids, nil
 }
 
