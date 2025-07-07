@@ -12,7 +12,8 @@ type TrackedProcess struct {
 	namespaces []string
 }
 
-func Run(args []string) bool {
+//Run a container
+func Run(args []string) ([]TrackedProcess, error) {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -22,9 +23,12 @@ func Run(args []string) bool {
 	if err != nil {
 		panic(err)
 	}
-	return true
+	var processes []TrackedProcess
+	processes = append(processes, TrackedProcess{})
+	return processes, err 
 }
 
+//List containers
 func List(args []string) ([]TrackedProcess, error) {
     files, err := os.ReadDir("/proc")
     if err != nil {
