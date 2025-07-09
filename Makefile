@@ -5,9 +5,8 @@ setup_hooks:
 .PHONY:
 .ONESHELL:
 build:
-	@rm main || true
-	@go build  main.go 
-	./main run ls -a
+	@rm gontainers || true
+	@go build  -o gontainers main.go
 
 .PHONY:
 debug: 
