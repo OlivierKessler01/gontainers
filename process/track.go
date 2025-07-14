@@ -1,10 +1,10 @@
-package process  
+package process
 
 import (
-	"os"
 	"encoding/json"
-	"strconv"
 	"fmt"
+	"os"
+	"strconv"
 )
 
 var TrackedProcesses []TrackedProcess 
@@ -66,28 +66,39 @@ func Load() error {
 
  	data, err := os.ReadFile("db.json")
     if err != nil {
-        return  err
+        return err
     }
 	
     if err := json.Unmarshal(data, &TrackedProcesses); err != nil {
 		return err
     }
-
+	
     files, err := os.ReadDir("/proc")
+	releaseLock()	
     if err != nil {
         return err
     }
 
-    var pids []TrackedProcess
-	//runtime.Breakpoint()
+    var pids map[int]bool 
+	pids = make(map[int]bool)
+
     for _, f := range files {
         if f.IsDir() {
             pid, err := strconv.Atoi(f.Name())
             if err == nil {
-				pids = append(pids, TrackedProcess{PID:pid})
+				pids[pid] = true
             }
         }
     }
+
+	var newTrackedProcesses []TrackedProcess
+	for _,proc := range TrackedProcesses {
+		if _, present := pids[proc.PID]; present {
+			newTrackedProcesses = append(newTrackedProcesses, proc)
+		}
+	}
+	
+	TrackedProcesses = newTrackedProcesses
 	
     return nil
 }

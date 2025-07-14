@@ -1,29 +1,46 @@
 package process
 
-import ( 
+import (
+	"fmt"
 	"os"
 	"os/exec"
-	"fmt"
+	"runtime"
+	"strings"
+	"syscall"
+	"text/tabwriter"
 )
-
-
 
 //Run a container
 func Run(args []string) error {
-	Load()
+	err := Load()
+	if err != nil {
+		return err
+	}
 	var cgroups []string
 	var namespaces []string
 
 	cmd := exec.Command(args[0], args[1:]...)
+	runtime.Breakpoint()
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+        Cloneflags: syscall.CLONE_NEWUTS |   // new UTS namespace (hostname)
+            syscall.CLONE_NEWPID |            // new PID namespace
+            syscall.CLONE_NEWNS |             // new mount namespace
+            syscall.CLONE_NEWNET,             // new network namespace
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	//runtime.Breakpoint()
-
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		panic(err)
 	}
+
+	namespaces, err = GetNamespaces(cmd.Process.Pid)
+	if err != nil {
+		return err
+	}
+	
 	Add(cmd.Process.Pid, cgroups, namespaces)
 	Save()
 
@@ -32,10 +49,23 @@ func Run(args []string) error {
 
 //List containers
 func List(args []string) error {
-	Load()
+	err := Load()
+	if err != nil {
+		return err
+	}
+
+    w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+    fmt.Fprintln(w, "PID\tcgroups\tnamespaces")
     for _, t := range TrackedProcesses {
-		fmt.Println(t.PID)
+		row := []string {
+			fmt.Sprintf("%d", t.PID),
+			strings.Join(t.cgroups, ","),
+			strings.Join(t.namespaces, ","),
+		}
+    	fmt.Fprintln(w, strings.Join(row, "\t"))
     }
+
+    w.Flush()
 	
     return nil
 }
