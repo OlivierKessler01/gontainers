@@ -20,7 +20,6 @@ func Run(args []string) error {
 	var namespaces []string
 
 	cmd := exec.Command(args[0], args[1:]...)
-	runtime.Breakpoint()
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
         Cloneflags: syscall.CLONE_NEWUTS |   // new UTS namespace (hostname)
@@ -41,6 +40,7 @@ func Run(args []string) error {
 		return err
 	}
 	
+	runtime.Breakpoint()
 	Add(cmd.Process.Pid, cgroups, namespaces)
 	Save()
 
@@ -59,8 +59,8 @@ func List(args []string) error {
     for _, t := range TrackedProcesses {
 		row := []string {
 			fmt.Sprintf("%d", t.PID),
-			strings.Join(t.cgroups, ","),
-			strings.Join(t.namespaces, ","),
+			strings.Join(t.Cgroups, ","),
+			strings.Join(t.Namespaces, ","),
 		}
     	fmt.Fprintln(w, strings.Join(row, "\t"))
     }

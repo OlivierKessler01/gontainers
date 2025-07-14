@@ -12,15 +12,15 @@ var LOCK_FILE = "db.lock"
 
 type TrackedProcess struct {
 	PID int
-	cgroups []string
-	namespaces []string
+	Cgroups []string
+	Namespaces []string
 }
 
 func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
 	t := TrackedProcess{
         PID:        pid,
-        cgroups:    cgroups,
-        namespaces: namespaces,
+        Cgroups:    cgroups,
+        Namespaces: namespaces,
     }
 	TrackedProcesses = append(TrackedProcesses, t)
 	return t, nil 
@@ -74,7 +74,6 @@ func Load() error {
     }
 	
     files, err := os.ReadDir("/proc")
-	releaseLock()	
     if err != nil {
         return err
     }
@@ -104,6 +103,7 @@ func Load() error {
 }
 
 func Save() error {
+	defer releaseLock()
 	binary, err := json.Marshal(TrackedProcesses)
 	if err != nil {
 		return err
@@ -113,7 +113,6 @@ func Save() error {
 	if err != nil {
 		return err
 	}
-	defer releaseLock()
 	return nil
 }
 
