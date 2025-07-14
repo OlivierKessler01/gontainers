@@ -3,12 +3,30 @@ package main
 import (
 	"olivierkessler01/gontainers/process"
 	"os"
+	"net"
+	"fmt"
+    "google.golang.org/grpc"
 )
+
+func serveGRPC(args []string) error {
+	// Setup and start your gRPC server here
+	listener, err := net.Listen("unix", "/var/run/gontainers.sock")
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	process.RegisterMyRuntime(grpcServer)
+
+	fmt.Println("Starting gRPC server...")
+	return grpcServer.Serve(listener)
+}
 
 func main() {
 	funcMap := map[string]func(args []string) error{
 		"run":  process.Run,
 		"list": process.List,
+		"serve": serveGRPC,
 	}
 
 	var args []string

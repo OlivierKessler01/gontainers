@@ -19,4 +19,8 @@ debug_run: build
 debug_list: build
 	~/go/bin/dlv debug ./main.go -- list 
 
+install_cri_tools:
+	VERSION="v1.30.0"
+	curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/${VERSION}/crictl-${VERSION}-linux-amd64.tar.gz
+	sudo tar -C /usr/local/bin -xzf crictl-${VERSION}-linux-amd64.tar.gz
 
