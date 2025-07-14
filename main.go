@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"google.golang.org/grpc"
+	"net"
 	"olivierkessler01/gontainers/process"
 	"os"
-	"net"
-	"fmt"
-    "google.golang.org/grpc"
 )
 
 func serveGRPC(args []string) error {
@@ -24,8 +24,8 @@ func serveGRPC(args []string) error {
 
 func main() {
 	funcMap := map[string]func(args []string) error{
-		"run":  process.Run,
-		"list": process.List,
+		"run":   process.Run,
+		"list":  process.List,
 		"serve": serveGRPC,
 	}
 
