@@ -1,0 +1,13 @@
+<svg width="220" height="200" viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Container blocks forming a G, now with Linux-like colors -->
+  <rect x="40" y="40" width="40" height="40" fill="#FFCE00" rx="4"></rect> <!-- Yellow -->
+  <rect x="80" y="40" width="40" height="40" fill="#E95420" rx="4"></rect> <!-- Orange/Red -->
+  <rect x="40" y="80" width="40" height="40" fill="#2C001E" rx="4"></rect> <!-- Black/Purple tint -->
+  <rect x="40" y="120" width="40" height="40" fill="#FFFFFF" rx="4"></rect> <!-- White -->
+  <rect x="80" y="120" width="40" height="40" fill="#3465A4" rx="4"></rect> <!-- Blue -->
+  <rect x="120" y="120" width="40" height="40" fill="#000000" rx="4"></rect> <!-- Black -->
+  <!-- Label -->
+  <text x="110" y="190" font-family="Segoe UI, sans-serif" font-size="24" fill="#000000" text-anchor="middle">
+    Gontainers
+  </text>
+</svg>
