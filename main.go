@@ -28,6 +28,7 @@ func main() {
 		"list":  process.List,
 		"serve": serveGRPC,
 	}
+	defer process.ReleaseLock()
 
 	var args []string
 	args = os.Args[1:]

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"text/tabwriter"
@@ -68,5 +69,37 @@ func List(args []string) error {
     return nil
 }
 
+//Remove containers
+func Remove(args []string) error {
+	err := Load()
+	if err != nil {
+		return err
+	}
+
+	var pid int
+	pid, err = strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+
+	if !IsTracked(pid) {
+        fmt.Println("Failed to kill process:", err)
+		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
+	}
+
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	err = process.Kill()
+
+	if err != nil {
+        fmt.Println("Failed to kill process:", err)
+    } else {
+        fmt.Println("Process killed.")
+    }
+
+    return nil
+}
 
 

@@ -26,7 +26,7 @@ func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
 	return t, nil 
 }
 
-func acquireLock() error {
+func AcquireLock() error {
 	if _, err := os.Stat(LOCK_FILE); os.IsNotExist(err) {
         file, err := os.Create(LOCK_FILE)
         if err != nil {
@@ -42,7 +42,7 @@ func acquireLock() error {
 	return nil
 }
 
-func releaseLock() error {
+func ReleaseLock() error {
 	if _, err := os.Stat(LOCK_FILE); os.IsNotExist(err) {
         fmt.Println("Lock already released:", LOCK_FILE)
     } else {
@@ -57,8 +57,18 @@ func releaseLock() error {
 	return nil
 }
 
+func IsTracked(pid int) bool {
+    for _, proc := range TrackedProcesses {
+		if proc.PID == pid {
+			return true
+		}
+    }
+	
+	return false
+}
+
 func Load() error {
-	err := acquireLock()
+	err := AcquireLock()
 
 	if err != nil {
 		return err
@@ -103,7 +113,6 @@ func Load() error {
 }
 
 func Save() error {
-	defer releaseLock()
 	binary, err := json.Marshal(TrackedProcesses)
 	if err != nil {
 		return err
