@@ -31,5 +31,8 @@ func main() {
 
 	var args []string
 	args = os.Args[1:]
-	funcMap[args[0]](args[1:])
+	err := funcMap[args[0]](args[1:])
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
 }

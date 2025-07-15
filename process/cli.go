@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"syscall"
 	"text/tabwriter"
@@ -40,7 +39,6 @@ func Run(args []string) error {
 		return err
 	}
 	
-	runtime.Breakpoint()
 	Add(cmd.Process.Pid, cgroups, namespaces)
 	Save()
 

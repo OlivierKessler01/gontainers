@@ -36,8 +36,7 @@ func acquireLock() error {
         defer file.Close()
         fmt.Println("Lock acquired:", LOCK_FILE)
     } else {
-        fmt.Println("Cannot acquire lock, someone already has it:", LOCK_FILE)
-		return err
+		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", LOCK_FILE)
     }
 
 	return nil
@@ -60,6 +59,7 @@ func releaseLock() error {
 
 func Load() error {
 	err := acquireLock()
+
 	if err != nil {
 		return err
 	}
