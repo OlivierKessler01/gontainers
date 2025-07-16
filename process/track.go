@@ -3,12 +3,31 @@ package process
 import (
 	"encoding/json"
 	"fmt"
+	"olivierkessler01/gontainers/config"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
 var TrackedProcesses []TrackedProcess 
-var LOCK_FILE = "db.lock"
+const LOCK_FILE = "db.lock"
+const DB_FILE = "db.json"
+
+func getDBFilePath() string {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+    return filepath.Join(cfg.DBPath, DB_FILE)
+}
+
+func getLockFilePath() string {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+    return filepath.Join(cfg.DBPath, LOCK_FILE)
+}
 
 type TrackedProcess struct {
 	PID int
@@ -27,31 +46,31 @@ func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
 }
 
 func AcquireLock() error {
-	if _, err := os.Stat(LOCK_FILE); os.IsNotExist(err) {
-        file, err := os.Create(LOCK_FILE)
+	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
+        file, err := os.Create(getLockFilePath())
         if err != nil {
             fmt.Println("Error acquiring lock:", err)
             return err
         }
         defer file.Close()
-        fmt.Println("Lock acquired:", LOCK_FILE)
+        fmt.Println("Lock acquired:", getLockFilePath())
     } else {
-		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", LOCK_FILE)
+		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", getLockFilePath())
     }
 
 	return nil
 }
 
 func ReleaseLock() error {
-	if _, err := os.Stat(LOCK_FILE); os.IsNotExist(err) {
-        fmt.Println("Lock already released:", LOCK_FILE)
+	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
+        fmt.Println("Lock already released:", getLockFilePath())
     } else {
-		err := os.Remove(LOCK_FILE)
+		err := os.Remove(getLockFilePath())
 		if err != nil {
-        	fmt.Println("Failure releasing lock:", LOCK_FILE)
+        	fmt.Println("Failure releasing lock:", getLockFilePath())
 			return err
 		}
-		fmt.Println("Lock successfully released:", LOCK_FILE)
+		fmt.Println("Lock successfully released:", getLockFilePath())
     }
 
 	return nil
@@ -74,7 +93,7 @@ func Load() error {
 		return err
 	}
 
- 	data, err := os.ReadFile("db.json")
+ 	data, err := os.ReadFile(getDBFilePath())
     if err != nil {
         return err
     }
@@ -118,7 +137,7 @@ func Save() error {
 		return err
 	}
 
-	err = os.WriteFile("db.json", binary, 0644)
+	err = os.WriteFile(getDBFilePath(), binary, 0644)
 	if err != nil {
 		return err
 	}

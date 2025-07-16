@@ -11,10 +11,12 @@ import (
 )
 
 //Run a container
-func Run(args []string) error {
+func Run(args []string) (int, error) {
 	err := Load()
+	defer ReleaseLock()
+
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var cgroups []string
 	var namespaces []string
@@ -37,20 +39,22 @@ func Run(args []string) error {
 
 	namespaces, err = GetNamespaces(cmd.Process.Pid)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	
 	Add(cmd.Process.Pid, cgroups, namespaces)
 	Save()
 
-	return err 
+	return cmd.Process.Pid, err 
 }
 
 //List containers
-func List(args []string) error {
+func List(args []string) (int, error) {
 	err := Load()
+	defer ReleaseLock()
+
 	if err != nil {
-		return err
+		return 0, err
 	}
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -66,30 +70,32 @@ func List(args []string) error {
 
     w.Flush()
 	
-    return nil
+    return 0, nil
 }
 
 //Remove containers
-func Remove(args []string) error {
+func Remove(args []string) (int, error) {
 	err := Load()
+	defer ReleaseLock()
+
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var pid int
 	pid, err = strconv.Atoi(args[0])
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if !IsTracked(pid) {
         fmt.Println("Failed to kill process:", err)
-		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
+		return 0, fmt.Errorf("Container with PID %d doesn't exist.", pid)
 	}
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	err = process.Kill()
 
@@ -99,7 +105,7 @@ func Remove(args []string) error {
         fmt.Println("Process killed.")
     }
 
-    return nil
+    return 1, nil
 }
 
 
