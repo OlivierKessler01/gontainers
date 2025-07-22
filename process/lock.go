@@ -30,6 +30,13 @@ func AcquireLock() error {
             return err
         }
         defer file.Close()
+
+		_, err = file.WriteString(CURRENT_GOROUTINE_ID.String())
+		if err != nil {
+			fmt.Println("Error acquiring lock:", err)
+			return err
+		}
+
         fmt.Println("Lock acquired:", getLockFilePath())
     } else {
 		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", getLockFilePath())
