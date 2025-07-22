@@ -77,40 +77,46 @@ func List(args []string) (int, error) {
 }
 
 //Remove containers
-func Remove(args []string) (int, error) {
+func Remove(args []string) error {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	var pid int
 	pid, err = strconv.Atoi(args[0])
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if !IsTracked(pid) {
-        fmt.Println("Failed to kill process:", err)
-		return 0, fmt.Errorf("Container with PID %d doesn't exist.", pid)
+		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
 	}
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = process.Kill()
 
 	if err != nil {
-        fmt.Println("Failed to kill process:", err)
-    } else {
-        fmt.Println("Process killed.")
-    }
+        return fmt.Errorf("Failed to kill process:", err)
+    } 
+    
+	fmt.Println("Container killed.")
 
-    return 1, nil
+	delete(TrackedProcesses, pid)
+
+	err = Save()
+	if err != nil {
+		return err
+	}
+
+    return nil
 }
 
 

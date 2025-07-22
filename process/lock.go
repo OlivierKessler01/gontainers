@@ -79,7 +79,7 @@ func IsLockHeld() (bool, error) {
 	if scanner.Scan() {
 		var lockHolder string
 		lockHolder =  scanner.Text()
-		if lockHolder == CURRENT_GOROUTINE_ID {
+		if lockHolder == CURRENT_GOROUTINE_ID.String() {
 			return true, nil
 		} else {
 			return false, nil

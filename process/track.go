@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-var TrackedProcesses []TrackedProcess 
+var TrackedProcesses map[int]TrackedProcess 
 const DB_FILE = "db.json"
 
 func getDBFilePath() string {
@@ -33,7 +33,7 @@ func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
         Cgroups:    cgroups,
         Namespaces: namespaces,
     }
-	TrackedProcesses = append(TrackedProcesses, t)
+	TrackedProcesses[pid] = t
 	return t, nil 
 }
 
@@ -73,31 +73,37 @@ func Load() error {
         return err
     }
 
-    var pids map[int]bool 
-	pids = make(map[int]bool)
+    var systemPids map[int]bool 
+	systemPids = make(map[int]bool)
 
     for _, f := range files {
         if f.IsDir() {
             pid, err := strconv.Atoi(f.Name())
             if err == nil {
-				pids[pid] = true
+				systemPids[pid] = true
             }
         }
     }
 
-	var newTrackedProcesses []TrackedProcess
 	for _,proc := range TrackedProcesses {
-		if _, present := pids[proc.PID]; present {
-			newTrackedProcesses = append(newTrackedProcesses, proc)
+		if _, present := systemPids[proc.PID]; present {
+			delete(TrackedProcesses, proc.PID)
 		}
 	}
-	
-	TrackedProcesses = newTrackedProcesses
 	
     return nil
 }
 
 func Save() error {
+	held, err := IsLockHeld()
+	if err != nil {
+		return err
+	}
+
+	if held == false {
+		return errors.New("Cannot Save process DB because lock is held by another goroutine.")	
+	}
+
 	binary, err := json.Marshal(TrackedProcesses)
 	if err != nil {
 		return err
