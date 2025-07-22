@@ -12,8 +12,9 @@ import (
 
 //Run a container
 func Run(args []string) (int, error) {
-	err := Load()
+	AcquireLock()
 	defer ReleaseLock()
+	err := Load()
 
 	if err != nil {
 		return 0, err
@@ -50,8 +51,10 @@ func Run(args []string) (int, error) {
 
 //List containers
 func List(args []string) (int, error) {
-	err := Load()
+	AcquireLock()
 	defer ReleaseLock()
+
+	err := Load()
 
 	if err != nil {
 		return 0, err
@@ -75,8 +78,10 @@ func List(args []string) (int, error) {
 
 //Remove containers
 func Remove(args []string) (int, error) {
-	err := Load()
+	AcquireLock()
 	defer ReleaseLock()
+
+	err := Load()
 
 	if err != nil {
 		return 0, err

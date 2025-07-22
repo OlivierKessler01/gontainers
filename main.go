@@ -6,7 +6,9 @@ import (
 	"net"
 	"olivierkessler01/gontainers/process"
 	"os"
+	"github.com/google/uuid"
 )
+
 
 func serveGRPC(args []string) (int, error) {
 	// Setup and start your gRPC server here
@@ -28,7 +30,8 @@ func main() {
 		"list":  process.List,
 		"serve": serveGRPC,
 	}
-	defer process.ReleaseLock()
+
+	process.CURRENT_GOROUTINE_ID = uuid.New()
 
 	var args []string
 	args = os.Args[1:]

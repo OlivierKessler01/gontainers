@@ -2,7 +2,7 @@ package process
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"olivierkessler01/gontainers/config"
 	"os"
 	"path/filepath"
@@ -10,7 +10,6 @@ import (
 )
 
 var TrackedProcesses []TrackedProcess 
-const LOCK_FILE = "db.lock"
 const DB_FILE = "db.json"
 
 func getDBFilePath() string {
@@ -21,13 +20,6 @@ func getDBFilePath() string {
     return filepath.Join(cfg.DBPath, DB_FILE)
 }
 
-func getLockFilePath() string {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		panic(err)
-	}
-    return filepath.Join(cfg.DBPath, LOCK_FILE)
-}
 
 type TrackedProcess struct {
 	PID int
@@ -45,36 +37,6 @@ func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
 	return t, nil 
 }
 
-func AcquireLock() error {
-	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
-        file, err := os.Create(getLockFilePath())
-        if err != nil {
-            fmt.Println("Error acquiring lock:", err)
-            return err
-        }
-        defer file.Close()
-        fmt.Println("Lock acquired:", getLockFilePath())
-    } else {
-		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", getLockFilePath())
-    }
-
-	return nil
-}
-
-func ReleaseLock() error {
-	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
-        fmt.Println("Lock already released:", getLockFilePath())
-    } else {
-		err := os.Remove(getLockFilePath())
-		if err != nil {
-        	fmt.Println("Failure releasing lock:", getLockFilePath())
-			return err
-		}
-		fmt.Println("Lock successfully released:", getLockFilePath())
-    }
-
-	return nil
-}
 
 func IsTracked(pid int) bool {
     for _, proc := range TrackedProcesses {
@@ -86,11 +48,15 @@ func IsTracked(pid int) bool {
 	return false
 }
 
-func Load() error {
-	err := AcquireLock()
 
+func Load() error {
+	held, err := IsLockHeld()
 	if err != nil {
 		return err
+	}
+
+	if held == false {
+		return errors.New("Cannot Load process DB because lock is held by another goroutine.")	
 	}
 
  	data, err := os.ReadFile(getDBFilePath())

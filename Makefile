@@ -1,5 +1,6 @@
 export GOPATH=/home/olivierkessler/go
 export PATH=$(GOPATH)/bin:$(shell echo $$PATH)
+GOFLAGS = -mod=vendor
 
 .PHONY:
 setup_hooks:
@@ -9,7 +10,7 @@ setup_hooks:
 .ONESHELL:
 build:
 	@rm gontainers || true
-	@go build  -o gontainers main.go
+	@go build -o gontainers main.go
 
 .PHONY:
 debug_run: build
