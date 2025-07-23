@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log/slog"
 	"olivierkessler01/gontainers/config"
 	"os"
 	"path/filepath"
@@ -26,18 +27,18 @@ func AcquireLock() error {
 	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
         file, err := os.Create(getLockFilePath())
         if err != nil {
-            fmt.Println("Error acquiring lock:", err)
+            slog.Error(fmt.Sprintf("Error acquiring lock:", err))
             return err
         }
         defer file.Close()
 
 		_, err = file.WriteString(CURRENT_GOROUTINE_ID.String())
 		if err != nil {
-			fmt.Println("Error acquiring lock:", err)
+            slog.Error(fmt.Sprintf("Error acquiring lock:", err))
 			return err
 		}
 
-        fmt.Println("Lock acquired:", getLockFilePath())
+        slog.Info(fmt.Sprintf("Lock acquired: %s", getLockFilePath()))
     } else {
 		return fmt.Errorf("Cannot acquire lock, someone already has it: %s", getLockFilePath())
     }
@@ -64,7 +65,7 @@ func ReleaseLock() error {
 			fmt.Println("Failure releasing lock:", getLockFilePath())
 			return err
 		}
-		fmt.Println("Lock successfully released:", getLockFilePath())
+        slog.Info(fmt.Sprintf("Lock successfully released: %s", getLockFilePath()))
 		return nil
 	} 
 

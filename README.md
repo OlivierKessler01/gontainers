@@ -27,15 +27,19 @@ make
 
 * Copy `config.default.yaml` to a new `config.yaml` file and fill it with your config.
 
-* Run `./gontainers init`
+* Run `./gontainers init`, to initialize the containers tracking database.
 
 * Run `go mod vendor`
 
+* Run `make build`, to compile gontainers.
+
+Then you can use gontainers : 
 ```bash
 #Manual container management
 ./gontainers help
-./gontainers run '<>'
-./gontainers list '<>'
+sudo ./gontainers run '<>' #Needs root-level access to create namespaces for the container
+./gontainers list
+./gontainers remove '<PID>'
 
 #K8s container management
 ./gontainers serve #Start the gRPC server

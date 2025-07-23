@@ -3,11 +3,11 @@ package process
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"olivierkessler01/gontainers/config"
 	"os"
 	"path/filepath"
 	"strconv"
-	"fmt"
 )
 
 var TrackedProcesses map[int]TrackedProcess 
@@ -58,12 +58,14 @@ func Load() error {
 	}
 
 	if held == false {
-		return errors.New("Cannot Load process DB because lock is held by another goroutine.")	
+		return errors.New("Cannot Load process " +
+			"DB because lock is held by another goroutine.")	
 	}
 
  	data, err := os.ReadFile(getDBFilePath())
     if err != nil {
-		fmt.Println("Error reaching for the database, did you run `./gontainer init ?")
+		slog.Error("Error reaching for the database, did you " +
+		"run `./gontainer init ?")
         return err
     }
 	
