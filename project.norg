@@ -3,13 +3,15 @@
 ** TODO list
 
 - (x) Introduce slog for structured logging
-- ( ) Check that the `Remove` command actually works 
+- (x) Check that the `Remove` command actually works 
+- (x) Fix the tests
 - (?) Use the `urfave/cli` to manage the cli 
 - (+) Implement the CRI-api gRPC server
    - ( ) Finish the gRPC server initialization
    - ( ) Map the `List` command to the pod search
    - ( ) Map the `Remove` command to the pod removal
    - ( ) Map the `Run` command to the pod creation
+   - ( ) In the Run function, we launch the process before writing to the DB. If DB write fails, we should kill the process, but this is PLAIN WRONG. We should instead try to write to the DB, then launch the process, and if the launch fails, rollback the DB write (this should be locked).
 
 
 

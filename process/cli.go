@@ -12,13 +12,13 @@ import (
 )
 
 //Run a container
-func Run(args []string) error {
+func Run(args []string) (int, error) {
 	AcquireLock()
 	defer ReleaseLock()
 	err := Load()
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var cgroups []string
 	var namespaces []string
@@ -41,24 +41,27 @@ func Run(args []string) error {
 
 	namespaces, err = GetNamespaces(cmd.Process.Pid)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	
 	Add(cmd.Process.Pid, cgroups, namespaces)
-	Save()
+	err = Save()
+	if err != nil {
+		panic("We launched a container but can't write it into the DB, wroooong")
+	}
 
-	return err 
+	return cmd.Process.Pid, err 
 }
 
 //List containers
-func List(args []string) error {
+func List(args []string) (int, error) {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -74,60 +77,60 @@ func List(args []string) error {
 
     w.Flush()
 	
-    return nil
+    return len(TrackedProcesses), nil
 }
 
 //Init the database
-func Init(args []string) error {
+func Init(args []string) (int, error) {
 	if _, err := os.Stat(getDBFilePath()); os.IsNotExist(err) {
 		source, err := os.Open(DB_DEFAULT_FILE)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer source.Close()
 
 		destination, err := os.Create(getDBFilePath())
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer destination.Close()
 		_, err = io.Copy(destination, source)
 
-		return err
+		return 1, err
 	} else {
-		return fmt.Errorf("Database already initialized.")
+		return 0, fmt.Errorf("Database already initialized.")
 	}
 }
 
 //Remove containers
-func Remove(args []string) error {
+func Remove(args []string) (int, error) {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var pid int
 	pid, err = strconv.Atoi(args[0])
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if !IsTracked(pid) {
-		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
+		return 0, fmt.Errorf("Container with PID %d doesn't exist.", pid)
 	}
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	err = process.Kill()
 
 	if err != nil {
-        return fmt.Errorf("Failed to kill process:", err)
+        return 0, fmt.Errorf("Failed to kill process: %s", err)
     } 
     
 	fmt.Println("Container killed.")
@@ -136,10 +139,10 @@ func Remove(args []string) error {
 
 	err = Save()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-    return nil
+    return 1, nil
 }
 
 

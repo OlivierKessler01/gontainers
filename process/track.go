@@ -91,7 +91,7 @@ func Load() error {
     }
 
 	for _,proc := range TrackedProcesses {
-		if _, present := systemPids[proc.PID]; present {
+		if _, present := systemPids[proc.PID]; !present {
 			delete(TrackedProcesses, proc.PID)
 		}
 	}

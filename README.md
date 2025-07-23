@@ -39,7 +39,7 @@ Then you can use gontainers :
 ./gontainers help
 sudo ./gontainers run '<>' #Needs root-level access to create namespaces for the container
 ./gontainers list
-./gontainers remove '<PID>'
+sudo ./gontainers remove '<PID>'
 
 #K8s container management
 ./gontainers serve #Start the gRPC server

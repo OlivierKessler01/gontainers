@@ -21,7 +21,7 @@ func TestCreateRemove(t *testing.T) {
 	nbRemoved, err = Remove([]string{strconv.Itoa(pid)})
 
 	if err != nil || nbRemoved != 1 {
-        t.Fatalf("Failed deleting container.")
+        t.Fatalf("Failed deleting container. %s", err)
     }
 }
 

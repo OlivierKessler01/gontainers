@@ -34,7 +34,7 @@ install_cri_tools:
 	sudo tar -C /usr/local/bin -xzf crictl-${VERSION}-linux-amd64.tar.gz
 
 .PHONY:
-tests: #Usage `make test` Run the tests
-	cd process && go test
+test: #Usage `make test` Run the tests
+	@cd process && sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
 

@@ -27,14 +27,14 @@ func AcquireLock() error {
 	if _, err := os.Stat(getLockFilePath()); os.IsNotExist(err) {
         file, err := os.Create(getLockFilePath())
         if err != nil {
-            slog.Error(fmt.Sprintf("Error acquiring lock:", err))
+            slog.Error(fmt.Sprintf("Error acquiring lock: %s", err))
             return err
         }
         defer file.Close()
 
 		_, err = file.WriteString(CURRENT_GOROUTINE_ID.String())
 		if err != nil {
-            slog.Error(fmt.Sprintf("Error acquiring lock:", err))
+            slog.Error(fmt.Sprintf("Error acquiring lock: %s", err))
 			return err
 		}
 
