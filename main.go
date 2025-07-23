@@ -35,7 +35,7 @@ func main() {
 		"init":   process.Init,
 	}
 
-	var logLevel slog.Level = slog.LevelError	
+	var logLevel slog.Level = slog.LevelError
 	for _, arg := range os.Args {
 		if arg == "--verbose" || arg == "-v" {
 			logLevel = slog.LevelInfo
