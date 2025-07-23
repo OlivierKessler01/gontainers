@@ -1,4 +1,4 @@
-module olivierkessler01/gontainers
+module github.com/olivierkessler01/gontainers
 
 go 1.24.4
 

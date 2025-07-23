@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"olivierkessler01/gontainers/config"
+	"github.com/olivierkessler01/gontainers/config"
 	"os"
 	"path/filepath"
 

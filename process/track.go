@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
-	"olivierkessler01/gontainers/config"
+	"github.com/olivierkessler01/gontainers/config"
 	"os"
 	"path/filepath"
 	"strconv"

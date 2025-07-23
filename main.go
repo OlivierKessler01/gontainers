@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"olivierkessler01/gontainers/process"
+	"github.com/olivierkessler01/gontainers/process"
 	"os"
 	//"runtime"
 
@@ -27,7 +27,7 @@ func serveGRPC(args []string) (int, error) {
 }
 
 func main() {
-	funcMap := map[string]func(args []string) (int, error) {
+	funcMap := map[string]func(args []string) (int, error){
 		"run":    process.Run,
 		"list":   process.List,
 		"remove": process.Remove,
