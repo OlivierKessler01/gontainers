@@ -8,16 +8,17 @@ import (
 	"strings"
 	"syscall"
 	"text/tabwriter"
+	"io"
 )
 
 //Run a container
-func Run(args []string) (int, error) {
+func Run(args []string) error {
 	AcquireLock()
 	defer ReleaseLock()
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 	var cgroups []string
 	var namespaces []string
@@ -40,24 +41,24 @@ func Run(args []string) (int, error) {
 
 	namespaces, err = GetNamespaces(cmd.Process.Pid)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	
 	Add(cmd.Process.Pid, cgroups, namespaces)
 	Save()
 
-	return cmd.Process.Pid, err 
+	return err 
 }
 
 //List containers
-func List(args []string) (int, error) {
+func List(args []string) error {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -73,7 +74,29 @@ func List(args []string) (int, error) {
 
     w.Flush()
 	
-    return 0, nil
+    return nil
+}
+
+//Init the database
+func Init(args []string) error {
+	if _, err := os.Stat(getDBFilePath()); os.IsNotExist(err) {
+		source, err := os.Open(DB_DEFAULT_FILE)
+		if err != nil {
+			return err
+		}
+		defer source.Close()
+
+		destination, err := os.Create(getDBFilePath())
+		if err != nil {
+			return err
+		}
+		defer destination.Close()
+		_, err = io.Copy(destination, source)
+
+		return err
+	} else {
+		return fmt.Errorf("Database already initialized.")
+	}
 }
 
 //Remove containers

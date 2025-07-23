@@ -27,6 +27,8 @@ make
 
 * Copy `config.default.yaml` to a new `config.yaml` file and fill it with your config.
 
+* Run `./gontainers init`
+
 * Run `go mod vendor`
 
 ```bash

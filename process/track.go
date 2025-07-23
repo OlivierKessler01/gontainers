@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"fmt"
 )
 
 var TrackedProcesses map[int]TrackedProcess 
 const DB_FILE = "db.json"
+const DB_DEFAULT_FILE = "default.db.json"
 
 func getDBFilePath() string {
 	cfg, err := config.LoadConfig()
@@ -61,6 +63,7 @@ func Load() error {
 
  	data, err := os.ReadFile(getDBFilePath())
     if err != nil {
+		fmt.Println("Error reaching for the database, did you run `./gontainer init ?")
         return err
     }
 	
