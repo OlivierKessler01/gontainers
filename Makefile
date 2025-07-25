@@ -38,13 +38,8 @@ install_cri_tools:
 test: #Usage `make test` Run the tests
 	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
-.PHONY:
-download-ubuntu_image: #Usage `make download-ubuntu_image` Download the base image
-	# 1. Download a cloud image (e.g., Ubuntu)
-	wget -N https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img -O ubuntu.img
-
 .PHONY: 
-k8s-build-vm-image: #Usage `make k8s-build-vm-image` Build final image from base image and add kubelet to user-data.
+k8s-build-image: #Usage `make k8s-build-vm-image` Build final image from base image and add kubelet to user-data.
 	# 2. Create cloud-init files
 	rm cloud-init.iso || true #Delete VM image
 	rm state.img || true #Delete VM disk storage to start anew
@@ -80,7 +75,7 @@ k8s-build-vm-image: #Usage `make k8s-build-vm-image` Build final image from base
 	cloud-localds cloud-init.iso user-data meta-data
 
 .PHONY:
-k8s-test-setup: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
+k8s-run-vm: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
 	qemu-img resize state.img 20G
 	qemu-system-x86_64 \
 	  -m 4096 -smp 2 \

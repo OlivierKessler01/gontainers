@@ -55,3 +55,18 @@ make
 * Run `make build`, to compile gontainers.
 
 Then you can use gontainers
+
+
+## Testing
+
+Run the cli tests : 
+```bash
+make test 
+```
+
+Run the runtime in a kubernetes environment : 
+```bash
+make k8s-build-image
+make k8s-run-vm
+make k8s-test
+```
