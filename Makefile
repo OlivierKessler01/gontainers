@@ -2,6 +2,7 @@ export GOPATH=/home/olivierkessler/go
 export PATH=$(GOPATH)/bin:$(shell echo $$PATH)
 GOFLAGS = 
 
+
 help: 
 	@echo " "
 	@grep '^[^.#]\+:\s\+.*#' Makefile | \
@@ -37,4 +38,58 @@ install_cri_tools:
 test: #Usage `make test` Run the tests
 	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
+.PHONY:
+download-ubuntu_image:
+	# 1. Download a cloud image (e.g., Ubuntu)
+	wget -N https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img -O ubuntu.img
 
+.PHONY: 
+k8s-build-vm-image: #Usage `make k8s-build-vm-image` Pull an image, add kubelet to user-data and build a new image.
+	# 2. Create cloud-init files
+	echo 'instance-id: gontainers' > meta-data
+	@echo '#cloud-config' > user-data
+	@echo 'users:' >> user-data
+	@echo '  - name: user' >> user-data
+	@echo '    ssh-authorized-keys:' >> user-data
+	@echo '      - $(shell cat ~/.ssh/id_rsa.pub)' >> user-data
+	@echo '    sudo: ALL=(ALL) NOPASSWD:ALL' >> user-data
+	@echo '    shell: /bin/bash' >> user-data
+	@echo '' >> user-data
+	@echo 'packages:' >> user-data
+	@echo '  - apt-transport-https' >> user-data
+	@echo '  - ca-certificates' >> user-data
+	@echo '  - curl' >> user-data
+	@echo '' >> user-data
+	@echo 'runcmd:' >> user-data
+	@echo '  - curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -' >> user-data
+	@echo '  - echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list' >> user-data
+	@echo '  - apt-get update' >> user-data
+	@echo '  - apt-get install -y kubelet cri-tools' >> user-data
+	@echo '  - mkdir -p /etc/kubelet/manifests' >> user-data
+	# 3. Build cloud-init ISO
+	#sudo dnf install cloud-utils
+	cloud-localds cloud-init.iso user-data meta-data
+
+.PHONY:
+k8s-test-setup: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
+	qemu-system-x86_64 \
+	  -m 4096 -smp 2 \
+	  -nographic \
+	  -enable-kvm \
+	  -drive file=ubuntu.img,format=qcow2,if=virtio \
+	  -drive file=cloud-init.iso,format=raw,if=virtio \
+	  -netdev user,id=n1,hostfwd=tcp::2222-:22 \
+	  -device virtio-net-pci,netdev=n1
+
+k8s-test: #Usage `make k8s-test` Run the ./gontainers grpc server into a VM. Try to contact it.
+	scp -P 2222 ./gontainers user@localhost:/home/user/
+	ssh -p 2222 user@localhost "chmod +x ./gontainers"
+	ssh -p 2222 user@localhost "sudo ./gontainers serve"
+	ssh -p 2222 user@localhost "\
+		sudo kubelet \
+			--container-runtime=remote \
+			--container-runtime-endpoint=unix:///var/run/gontainers.sock \
+			--register-node=false \
+			--kubeconfig=/dev/null \
+			--pod-manifest-path=/etc/kubelet/manifests \
+			--v=4"

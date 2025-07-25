@@ -9,6 +9,7 @@ import (
 // MyRuntime implements the CRI RuntimeService
 type MyRuntime struct {
     runtimeapi.UnimplementedRuntimeServiceServer
+    runtimeapi.UnimplementedImageServiceServer
 }
 
 // Implement Version() to respond to crictl version/info
