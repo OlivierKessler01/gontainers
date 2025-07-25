@@ -4,3 +4,5 @@ db.lock
 config.yaml
 vendor
 state.img
+user-data
+meta-data
