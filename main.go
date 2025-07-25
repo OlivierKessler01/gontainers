@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,43 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/olivierkessler01/gontainers/process"
 	"github.com/urfave/cli/v3"
-	"google.golang.org/grpc"
 )
-
-const GRPC_SOCKET = "/var/run/gontainers.sock"
-
-func serveGRPC(ctx context.Context, cmd *cli.Command) error {
-	// Setup and start your gRPC server here
-	listener, err := net.Listen("unix", GRPC_SOCKET)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		listener.Close()
-		os.Remove(GRPC_SOCKET)
-	}()
-
-	grpcServer := grpc.NewServer()
-	process.RegisterMyRuntime(grpcServer)
-
-	// Run server in background
-	errCh := make(chan error, 1)
-	go func() {
-		slog.Info("Starting gRPC server...")
-		errCh <- grpcServer.Serve(listener)
-	}()
-
-	// Watch for context cancellation
-	select {
-	case <-ctx.Done():
-		slog.Info("Context canceled. Stopping server...")
-		grpcServer.GracefulStop()
-		return nil
-	case err := <-errCh:
-		return fmt.Errorf("gRPC server error: %w", err)
-	}
-}
 
 func run(args []string) {
 	var logLevel slog.Level = slog.LevelError
@@ -58,7 +21,7 @@ func run(args []string) {
 	defer stop()
 
 	verboseOutArgs = make([]string, 0)
-	
+
 	for _, arg := range os.Args {
 		if arg == "--verbose=true" || arg == "-v" {
 			logLevel = slog.LevelInfo
@@ -92,7 +55,7 @@ func run(args []string) {
 			{
 				Name:   "server",
 				Usage:  "Server the CR-API gRPC server.",
-				Action: serveGRPC,
+				Action: process.ServeGRPC,
 			},
 			{
 				Name:   "init",
