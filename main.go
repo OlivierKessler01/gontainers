@@ -1,40 +1,36 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/olivierkessler01/gontainers/process"
 	"log/slog"
 	"net"
 	"os"
+
+	"github.com/olivierkessler01/gontainers/process"
+
 	//"runtime"
 
 	"github.com/google/uuid"
+	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 )
 
-func serveGRPC(args []string) (int, error) {
+func serveGRPC(ctx context.Context, cmd *cli.Command) error {
 	// Setup and start your gRPC server here
 	listener, err := net.Listen("unix", "/var/run/gontainers.sock")
 	if err != nil {
-		return 0, fmt.Errorf("failed to listen: %w", err)
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
 	grpcServer := grpc.NewServer()
 	process.RegisterMyRuntime(grpcServer)
 
 	slog.Info("Starting gRPC server...")
-	return 1, grpcServer.Serve(listener)
+	return grpcServer.Serve(listener)
 }
 
 func main() {
-	funcMap := map[string]func(args []string) (int, error){
-		"run":    process.Run,
-		"list":   process.List,
-		"remove": process.Remove,
-		"serve":  serveGRPC,
-		"init":   process.Init,
-	}
-
 	var logLevel slog.Level = slog.LevelError
 	for _, arg := range os.Args {
 		if arg == "--verbose" || arg == "-v" {
@@ -44,14 +40,40 @@ func main() {
 	}
 
 	slog.SetLogLoggerLevel(logLevel)
-	//runtime.Breakpoint()
-
 	process.CURRENT_GOROUTINE_ID = uuid.New()
 
-	var args []string
-	args = os.Args[1:]
-	_, err := funcMap[args[0]](args[1:])
-	if err != nil {
-		slog.Error(fmt.Sprintf("Error: %s", err))
+    cmd := &cli.Command{
+		Commands: []*cli.Command{
+			{
+				Name:  "run",
+				Usage: "Run a container, get a PID.",
+				Action: process.Run,
+			},
+			{
+				Name:  "list",
+				Usage: "List containers.",
+				Action: process.List,
+			},
+			{
+				Name:  "remove",
+				Usage: "Remove a container.",
+				Action: process.Remove,
+			},
+			{
+				Name:  "server",
+				Usage: "Server the CR-API gRPC server.",
+				Action: serveGRPC,
+			},
+			{
+				Name:  "init",
+				Usage: "Init the container database.",
+				Action: process.Init,
+			},
+		},
 	}
+
+    if err := cmd.Run(context.Background(), os.Args); err != nil {
+		slog.Error(fmt.Sprintf("Error: %s", err))
+		return
+    }
 }

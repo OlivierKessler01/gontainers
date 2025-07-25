@@ -1,67 +1,74 @@
 package process
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
 	"text/tabwriter"
-	"io"
+
+	"github.com/urfave/cli/v3"
 )
 
 //Run a container
-func Run(args []string) (int, error) {
+func Run(ctx context.Context, cmd *cli.Command) error {
+	args := cmd.Args()
+
 	AcquireLock()
 	defer ReleaseLock()
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 	var cgroups []string
 	var namespaces []string
+	
+	var procArgs []string
+	procArgs = strings.Fields(args.First())
+	proc := exec.Command(procArgs[0], procArgs[1:]...)
 
-	cmd := exec.Command(args[0], args[1:]...)
-
-	cmd.SysProcAttr = &syscall.SysProcAttr{
+	proc.SysProcAttr = &syscall.SysProcAttr{
         Cloneflags: syscall.CLONE_NEWUTS |   // new UTS namespace (hostname)
             syscall.CLONE_NEWPID |            // new PID namespace
             syscall.CLONE_NEWNS |             // new mount namespace
             syscall.CLONE_NEWNET,             // new network namespace
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	proc.Stdout = os.Stdout
+	proc.Stderr = os.Stderr
 
-	err = cmd.Start()
+	err = proc.Start()
 	if err != nil {
 		panic(err)
 	}
 
-	namespaces, err = GetNamespaces(cmd.Process.Pid)
+	namespaces, err = GetNamespaces(proc.Process.Pid)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	
-	Add(cmd.Process.Pid, cgroups, namespaces)
+	Add(proc.Process.Pid, cgroups, namespaces)
 	err = Save()
 	if err != nil {
 		panic("We launched a container but can't write it into the DB, wroooong")
 	}
 
-	return cmd.Process.Pid, err 
+	return err 
 }
 
 //List containers
-func List(args []string) (int, error) {
+func List(ctx context.Context, cmd *cli.Command) error {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -77,60 +84,60 @@ func List(args []string) (int, error) {
 
     w.Flush()
 	
-    return len(TrackedProcesses), nil
+    return nil
 }
 
 //Init the database
-func Init(args []string) (int, error) {
+func Init(ctx context.Context, cmd *cli.Command) error {
 	if _, err := os.Stat(getDBFilePath()); os.IsNotExist(err) {
 		source, err := os.Open(DB_DEFAULT_FILE)
 		if err != nil {
-			return 0, err
+			return err
 		}
 		defer source.Close()
 
 		destination, err := os.Create(getDBFilePath())
 		if err != nil {
-			return 0, err
+			return err
 		}
 		defer destination.Close()
 		_, err = io.Copy(destination, source)
 
-		return 1, err
+		return err
 	} else {
-		return 0, fmt.Errorf("Database already initialized.")
+		return fmt.Errorf("Database already initialized.")
 	}
 }
 
 //Remove containers
-func Remove(args []string) (int, error) {
+func Remove(ctx context.Context, cmd *cli.Command) error {
 	AcquireLock()
 	defer ReleaseLock()
 
 	err := Load()
 
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	var pid int
-	pid, err = strconv.Atoi(args[0])
+	pid, err = strconv.Atoi(cmd.Args().First())
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if !IsTracked(pid) {
-		return 0, fmt.Errorf("Container with PID %d doesn't exist.", pid)
+		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
 	}
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	err = process.Kill()
 
 	if err != nil {
-        return 0, fmt.Errorf("Failed to kill process: %s", err)
+        return fmt.Errorf("Failed to kill process: %s", err)
     } 
     
 	fmt.Println("Container killed.")
@@ -139,10 +146,10 @@ func Remove(args []string) (int, error) {
 
 	err = Save()
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-    return 1, nil
+    return nil
 }
 
 

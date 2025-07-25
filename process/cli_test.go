@@ -10,14 +10,20 @@ func TestList(t *testing.T) {
 	List(args)
 }
 
-func TestCreateRemove(t *testing.T) {
+func TestCreateListRemove(t *testing.T) {
 	args := []string {"tail", "-f", "/dev/null"}
 	pid, err := Run(args)
 	if err != nil {
         t.Fatalf("Failed running the container. %s", err)
     }
+
+	var nbRemoved, nbContainers int
 	
-	var nbRemoved int
+	nbContainers, err = List([]string{})
+	if err != nil || nbContainers != 1 {
+		t.Fatalf("Wrong number of containers")
+	}
+
 	nbRemoved, err = Remove([]string{strconv.Itoa(pid)})
 
 	if err != nil || nbRemoved != 1 {

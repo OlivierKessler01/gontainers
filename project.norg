@@ -5,7 +5,7 @@
 - (x) Introduce slog for structured logging
 - (x) Check that the `Remove` command actually works 
 - (x) Fix the tests
-- (?) Use the `urfave/cli` to manage the cli 
+- (x) Use the `urfave/cli` to manage the cli 
 - (+) Implement the CRI-api gRPC server
    - ( ) Finish the gRPC server initialization
    - ( ) Map the `List` command to the pod search

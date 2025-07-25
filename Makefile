@@ -1,6 +1,6 @@
 export GOPATH=/home/olivierkessler/go
 export PATH=$(GOPATH)/bin:$(shell echo $$PATH)
-GOFLAGS = -mod=vendor
+GOFLAGS = 
 
 help: 
 	@echo " "
