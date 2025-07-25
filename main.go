@@ -6,11 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-
 	"github.com/olivierkessler01/gontainers/process"
-
-	//"runtime"
-
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
@@ -30,7 +26,7 @@ func serveGRPC(ctx context.Context, cmd *cli.Command) error {
 	return grpcServer.Serve(listener)
 }
 
-func main() {
+func run(args []string) {
 	var logLevel slog.Level = slog.LevelError
 	for _, arg := range os.Args {
 		if arg == "--verbose" || arg == "-v" {
@@ -42,38 +38,43 @@ func main() {
 	slog.SetLogLoggerLevel(logLevel)
 	process.CURRENT_GOROUTINE_ID = uuid.New()
 
-    cmd := &cli.Command{
+	cmd := &cli.Command{
 		Commands: []*cli.Command{
 			{
-				Name:  "run",
-				Usage: "Run a container, get a PID.",
+				Name:   "run",
+				Usage:  "Run a container, get a PID.",
 				Action: process.Run,
 			},
 			{
-				Name:  "list",
-				Usage: "List containers.",
+				Name:   "list",
+				Usage:  "List containers.",
 				Action: process.List,
 			},
 			{
-				Name:  "remove",
-				Usage: "Remove a container.",
+				Name:   "remove",
+				Usage:  "Remove a container.",
 				Action: process.Remove,
 			},
 			{
-				Name:  "server",
-				Usage: "Server the CR-API gRPC server.",
+				Name:   "server",
+				Usage:  "Server the CR-API gRPC server.",
 				Action: serveGRPC,
 			},
 			{
-				Name:  "init",
-				Usage: "Init the container database.",
+				Name:   "init",
+				Usage:  "Init the container database.",
 				Action: process.Init,
 			},
 		},
 	}
 
-    if err := cmd.Run(context.Background(), os.Args); err != nil {
+	if err := cmd.Run(context.Background(), args); err != nil {
 		slog.Error(fmt.Sprintf("Error: %s", err))
 		return
-    }
+	}
 }
+
+func main() {
+	run(os.Args)
+}
+

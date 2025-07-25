@@ -35,6 +35,6 @@ install_cri_tools:
 
 .PHONY:
 test: #Usage `make test` Run the tests
-	@cd process && sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
+	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
 
