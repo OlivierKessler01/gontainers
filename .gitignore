@@ -3,3 +3,4 @@ gontainers
 db.lock
 config.yaml
 vendor
+state.img

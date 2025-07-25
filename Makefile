@@ -39,13 +39,16 @@ test: #Usage `make test` Run the tests
 	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
 .PHONY:
-download-ubuntu_image:
+download-ubuntu_image: #Usage `make download-ubuntu_image` Download the base image
 	# 1. Download a cloud image (e.g., Ubuntu)
 	wget -N https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img -O ubuntu.img
 
 .PHONY: 
-k8s-build-vm-image: #Usage `make k8s-build-vm-image` Pull an image, add kubelet to user-data and build a new image.
+k8s-build-vm-image: #Usage `make k8s-build-vm-image` Build final image from base image and add kubelet to user-data.
 	# 2. Create cloud-init files
+	rm cloud-init.iso || true #Delete VM image
+	rm state.img || true #Delete VM disk storage to start anew
+	cp ubuntu.img state.img
 	echo 'instance-id: gontainers' > meta-data
 	@echo '#cloud-config' > user-data
 	@echo 'users:' >> user-data
@@ -60,9 +63,15 @@ k8s-build-vm-image: #Usage `make k8s-build-vm-image` Pull an image, add kubelet 
 	@echo '  - ca-certificates' >> user-data
 	@echo '  - curl' >> user-data
 	@echo '' >> user-data
+	@echo 'write_files:' >> user-data
+	@echo '  - path: /etc/apt/sources.list.d/kubernetes.list' >> user-data
+	@echo '    content: |' >> user-data
+	@echo '      deb https://apt.kubernetes.io/ kubernetes-xenial main' >> user-data
 	@echo 'runcmd:' >> user-data
-	@echo '  - curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -' >> user-data
-	@echo '  - echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list' >> user-data
+	@echo '  - apt-get update' >> user-data
+	@echo '  - sudo apt-get install -y apt-transport-https ca-certificates curl gpg' >> user-data
+	@echo '  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg' >> user-data
+	@echo '  - echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list' >> user-data
 	@echo '  - apt-get update' >> user-data
 	@echo '  - apt-get install -y kubelet cri-tools' >> user-data
 	@echo '  - mkdir -p /etc/kubelet/manifests' >> user-data
@@ -72,11 +81,12 @@ k8s-build-vm-image: #Usage `make k8s-build-vm-image` Pull an image, add kubelet 
 
 .PHONY:
 k8s-test-setup: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
+	qemu-img resize state.img 20G
 	qemu-system-x86_64 \
 	  -m 4096 -smp 2 \
 	  -nographic \
 	  -enable-kvm \
-	  -drive file=ubuntu.img,format=qcow2,if=virtio \
+	  -drive file=state.img,format=qcow2,if=virtio \
 	  -drive file=cloud-init.iso,format=raw,if=virtio \
 	  -netdev user,id=n1,hostfwd=tcp::2222-:22 \
 	  -device virtio-net-pci,netdev=n1
@@ -84,10 +94,9 @@ k8s-test-setup: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
 k8s-test: #Usage `make k8s-test` Run the ./gontainers grpc server into a VM. Try to contact it.
 	scp -P 2222 ./gontainers user@localhost:/home/user/
 	ssh -p 2222 user@localhost "chmod +x ./gontainers"
-	ssh -p 2222 user@localhost "sudo ./gontainers serve"
+	ssh -p 2222 user@localhost "sudo ./gontainers server -v" &
 	ssh -p 2222 user@localhost "\
 		sudo kubelet \
-			--container-runtime=remote \
 			--container-runtime-endpoint=unix:///var/run/gontainers.sock \
 			--register-node=false \
 			--kubeconfig=/dev/null \

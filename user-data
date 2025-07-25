@@ -11,9 +11,15 @@ packages:
   - ca-certificates
   - curl
 
+write_files:
+  - path: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb https://apt.kubernetes.io/ kubernetes-xenial main
 runcmd:
-  - curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-  - echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+  - apt-get update
+  - sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  - echo deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ / | sudo tee /etc/apt/sources.list.d/kubernetes.list
   - apt-get update
   - apt-get install -y kubelet cri-tools
   - mkdir -p /etc/kubelet/manifests
