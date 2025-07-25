@@ -11,7 +11,7 @@
 
 At the moment, the `Gontainer` runtime is only compatible with Linux x86.
 
-Through `CRI-API` the goal of the project is to development fully k8s-compatible 
+Through `CRI-API` the goal of the project is to develop a fully k8s-compatible 
 container runtime. This entails having a long-lived process listening for gRPC connections.
 
 ## Usage
