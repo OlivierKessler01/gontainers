@@ -6,34 +6,68 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"github.com/olivierkessler01/gontainers/process"
+	"os/signal"
+	"syscall"
+
 	"github.com/google/uuid"
+	"github.com/olivierkessler01/gontainers/process"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 )
 
+const GRPC_SOCKET = "/var/run/gontainers.sock"
+
 func serveGRPC(ctx context.Context, cmd *cli.Command) error {
 	// Setup and start your gRPC server here
-	listener, err := net.Listen("unix", "/var/run/gontainers.sock")
+	listener, err := net.Listen("unix", GRPC_SOCKET)
 	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
+		return err
 	}
+
+	defer func() {
+		listener.Close()
+		os.Remove(GRPC_SOCKET)
+	}()
 
 	grpcServer := grpc.NewServer()
 	process.RegisterMyRuntime(grpcServer)
 
-	slog.Info("Starting gRPC server...")
-	return grpcServer.Serve(listener)
+	// Run server in background
+	errCh := make(chan error, 1)
+	go func() {
+		slog.Info("Starting gRPC server...")
+		errCh <- grpcServer.Serve(listener)
+	}()
+
+	// Watch for context cancellation
+	select {
+	case <-ctx.Done():
+		slog.Info("Context canceled. Stopping server...")
+		grpcServer.GracefulStop()
+		return nil
+	case err := <-errCh:
+		return fmt.Errorf("gRPC server error: %w", err)
+	}
 }
 
 func run(args []string) {
 	var logLevel slog.Level = slog.LevelError
+	var verboseOutArgs []string
+
+	cancelleableContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	verboseOutArgs = make([]string, 0)
+	
 	for _, arg := range os.Args {
-		if arg == "--verbose" || arg == "-v" {
+		if arg == "--verbose=true" || arg == "-v" {
 			logLevel = slog.LevelInfo
-			break
+		} else {
+			verboseOutArgs = append(verboseOutArgs, arg)
 		}
 	}
+
+	args = verboseOutArgs
 
 	slog.SetLogLoggerLevel(logLevel)
 	process.CURRENT_GOROUTINE_ID = uuid.New()
@@ -68,8 +102,8 @@ func run(args []string) {
 		},
 	}
 
-	if err := cmd.Run(context.Background(), args); err != nil {
-		slog.Error(fmt.Sprintf("Error: %s", err))
+	if err := cmd.Run(cancelleableContext, args); err != nil {
+		slog.Error(fmt.Sprintf("%s", err))
 		return
 	}
 }
@@ -77,4 +111,3 @@ func run(args []string) {
 func main() {
 	run(os.Args)
 }
-

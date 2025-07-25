@@ -7,7 +7,7 @@
 - (x) Fix the tests
 - (x) Use the `urfave/cli` to manage the cli 
 - (+) Implement the CRI-api gRPC server
-   - ( ) Finish the gRPC server initialization
+   - (x) Finish the gRPC server initialization
    - ( ) Map the `List` command to the pod search
    - ( ) Map the `Remove` command to the pod removal
    - ( ) Map the `Run` command to the pod creation
