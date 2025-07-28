@@ -42,8 +42,11 @@ install_cri_tools:
 test: #Usage `make test` Run the tests
 	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) go test
 
+
+
+################################## K8S node/virtualization ###############################3
 .PHONY: 
-k8s-build-image: #Usage `make k8s-build-vm-image` Build final image from base image and add kubelet to user-data.
+k8s-build-image: #Usage `make k8s-build-vm-image` Build a k8s-compatible VM image from a ubuntu base image.
 	# 2. Create cloud-init files
 	rm k8s-virt/cloud-init.iso || true #Delete VM image
 	rm k8s-virt/state.img || true #Delete VM disk storage to start anew
@@ -79,7 +82,7 @@ k8s-build-image: #Usage `make k8s-build-vm-image` Build final image from base im
 	cloud-localds k8s-virt/cloud-init.iso user-data meta-data
 
 .PHONY:
-k8s-run-vm: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
+k8s-run-vm: #Usage `make k8s-test-setup` Launch a KVM VM and launch kubelet to make it a k8s-node.
 	rm k8s-virt/state.img || true #Delete VM disk storage to start anew
 	cp k8s-virt/ubuntu.img k8s-virt/state.img
 	qemu-img resize k8s-virt/state.img 20G
@@ -92,7 +95,7 @@ k8s-run-vm: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
 	  -netdev user,id=n1,hostfwd=tcp::2222-:22 \
 	  -device virtio-net-pci,netdev=n1
 
-k8s-test: #Usage `make k8s-test` Run the ./gontainers grpc server into a VM. Try to contact it.
+k8s-test: #Usage `make k8s-test` Run the ./gontainers grpc server into the VM. Then run kubelet.
 	@echo -e "$(GREEN)Uploading config and running the grpc server$(NC)"
 	scp -P 2222 ./k8s-virt/kubelet_config.yml user@localhost:/home/user/
 	ssh -p 2222 user@localhost sudo killall gontainers
