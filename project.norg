@@ -6,6 +6,8 @@
 - (x) Check that the `Remove` command actually works 
 - (x) Fix the tests
 - (x) Use the `urfave/cli` to manage the cli 
+- ( ) Implement the createContainer function
+- ( ) Make containers a set of processes, with a uuid and name
 - (+) Implement the CRI-api gRPC server
    - (x) Finish the gRPC server initialization
    - ( ) Map the `List` command to the pod search

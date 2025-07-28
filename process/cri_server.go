@@ -12,13 +12,11 @@ type MyRuntime struct {
     runtimeapi.UnimplementedImageServiceServer
 }
 
-
-
 // Implement Version() to respond to crictl version/info
 func (s *MyRuntime) Version(ctx context.Context, req *runtimeapi.VersionRequest) (*runtimeapi.VersionResponse, error) {
     return &runtimeapi.VersionResponse{
         Version:           "0.1.0",
-        RuntimeName:       "my-runtime",
+        RuntimeName:       "gontainers",
         RuntimeVersion:    "0.1.0",
         RuntimeApiVersion: "v1",
     }, nil
@@ -42,7 +40,12 @@ func (s *MyRuntime) ListPodSandbox(ctx context.Context, req *runtimeapi.ListPodS
     return nil, nil
 }
 func (s *MyRuntime) CreateContainer(ctx context.Context, req *runtimeapi.CreateContainerRequest) (*runtimeapi.CreateContainerResponse, error) {
-    return nil, nil
+	pid, err := runContainer([]string{"tail", "/dev/null"})
+	if err != nil {
+		return nil, err
+	}
+
+	return &runtimeapi.CreateContainerResponse{ContainerId: string(pid)}, nil
 }
 func (s *MyRuntime) StartContainer(ctx context.Context, req *runtimeapi.StartContainerRequest) (*runtimeapi.StartContainerResponse, error) {
     return nil, nil

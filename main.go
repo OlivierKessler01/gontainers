@@ -53,9 +53,10 @@ func run(args []string) {
 				Action: process.Remove,
 			},
 			{
-				Name:   "server",
-				Usage:  "Server the CR-API gRPC server.\n" + 	
-						"You can then use `crictl --runtime-endpoint unix:///var/run/gontainers.sock version` to test it.",
+				Name: "server",
+				Usage: "Server the CR-API gRPC server.\n" +
+					"You can then use `crictl --runtime-endpoint " +
+					"unix:///var/run/gontainers.sock version` to test it.",
 				Action: process.ServeGRPC,
 			},
 			{
