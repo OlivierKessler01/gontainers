@@ -1,6 +1,10 @@
 export GOPATH=/home/olivierkessler/go
 export PATH=$(GOPATH)/bin:$(shell echo $$PATH)
 GOFLAGS = 
+RED    := \033[0;31m
+GREEN  := \033[0;32m
+YELLOW := \033[0;33m
+NC     := \033[0m
 
 
 help: 
@@ -41,9 +45,9 @@ test: #Usage `make test` Run the tests
 .PHONY: 
 k8s-build-image: #Usage `make k8s-build-vm-image` Build final image from base image and add kubelet to user-data.
 	# 2. Create cloud-init files
-	rm cloud-init.iso || true #Delete VM image
-	rm state.img || true #Delete VM disk storage to start anew
-	cp ubuntu.img state.img
+	rm k8s-virt/cloud-init.iso || true #Delete VM image
+	rm k8s-virt/state.img || true #Delete VM disk storage to start anew
+	cp k8s-virt/ubuntu.img k8s-virt/state.img
 	echo 'instance-id: gontainers' > meta-data
 	@echo '#cloud-config' > user-data
 	@echo 'users:' >> user-data
@@ -72,28 +76,31 @@ k8s-build-image: #Usage `make k8s-build-vm-image` Build final image from base im
 	@echo '  - mkdir -p /etc/kubelet/manifests' >> user-data
 	# 3. Build cloud-init ISO
 	#sudo dnf install cloud-utils
-	cloud-localds cloud-init.iso user-data meta-data
+	cloud-localds k8s-virt/cloud-init.iso user-data meta-data
 
 .PHONY:
 k8s-run-vm: #Usage `make k8s-test-setup` Run a KVM VM with kubelet installed
-	qemu-img resize state.img 20G
+	rm k8s-virt/state.img || true #Delete VM disk storage to start anew
+	cp k8s-virt/ubuntu.img k8s-virt/state.img
+	qemu-img resize k8s-virt/state.img 20G
 	qemu-system-x86_64 \
 	  -m 4096 -smp 2 \
 	  -nographic \
 	  -enable-kvm \
-	  -drive file=state.img,format=qcow2,if=virtio \
-	  -drive file=cloud-init.iso,format=raw,if=virtio \
+	  -drive file=k8s-virt/state.img,format=qcow2,if=virtio \
+	  -drive file=k8s-virt/cloud-init.iso,format=raw,if=virtio \
 	  -netdev user,id=n1,hostfwd=tcp::2222-:22 \
 	  -device virtio-net-pci,netdev=n1
 
 k8s-test: #Usage `make k8s-test` Run the ./gontainers grpc server into a VM. Try to contact it.
+	@echo -e "$(GREEN)Uploading config and running the grpc server$(NC)"
+	scp -P 2222 ./k8s-virt/kubelet_config.yml user@localhost:/home/user/
+	ssh -p 2222 user@localhost sudo killall gontainers
 	scp -P 2222 ./gontainers user@localhost:/home/user/
 	ssh -p 2222 user@localhost "chmod +x ./gontainers"
-	ssh -p 2222 user@localhost "sudo ./gontainers server -v" &
-	ssh -p 2222 user@localhost "\
-		sudo kubelet \
-			--container-runtime-endpoint=unix:///var/run/gontainers.sock \
-			--register-node=false \
-			--kubeconfig=/dev/null \
-			--pod-manifest-path=/etc/kubelet/manifests \
-			--v=4"
+	ssh -p 2222 user@localhost "sudo ./gontainers server -v" & true
+	sleep 1
+	@echo -e "$(GREEN)Testing the grpc server by calling the Version endpoint$(NC)"
+	ssh -p 2222 user@localhost "sudo crictl --runtime-endpoint unix:///var/run/gontainers.sock version"
+	@echo -e "$(GREEN)Running kubelet$(NC)"
+	ssh -p 2222 user@localhost "sudo kubelet --config=kubelet_config.yml"
