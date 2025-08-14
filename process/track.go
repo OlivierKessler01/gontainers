@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-var TrackedProcesses map[int]TrackedProcess 
+var TrackedContainers map[string]*Container
 const DB_FILE = "db.json"
 const DB_DEFAULT_FILE = "default.db.json"
 
@@ -22,26 +22,19 @@ func getDBFilePath() string {
     return filepath.Join(cfg.DBPath, DB_FILE)
 }
 
-
-type TrackedProcess struct {
-	PID int
-	Cgroups []string
-	Namespaces []string
-}
-
-func Add(pid int, cgroups, namespaces []string) (TrackedProcess, error) {
-	t := TrackedProcess{
+func Add(pid int, cgroups, namespaces []string) (TrackedContainers, error) {
+	t := TrackedContainers{
         PID:        pid,
         Cgroups:    cgroups,
         Namespaces: namespaces,
     }
-	TrackedProcesses[pid] = t
+	TrackedContainers[pid] = t
 	return t, nil 
 }
 
 
 func IsTracked(pid int) bool {
-    for _, proc := range TrackedProcesses {
+    for _, proc := range TrackedContainers {
 		if proc.PID == pid {
 			return true
 		}
@@ -69,7 +62,7 @@ func Load() error {
         return err
     }
 	
-    if err := json.Unmarshal(data, &TrackedProcesses); err != nil {
+    if err := json.Unmarshal(data, &TrackedContainers); err != nil {
 		return err
     }
 	
@@ -90,9 +83,9 @@ func Load() error {
         }
     }
 
-	for _,proc := range TrackedProcesses {
+	for _,proc := range TrackedContainers {
 		if _, present := systemPids[proc.PID]; !present {
-			delete(TrackedProcesses, proc.PID)
+			delete(TrackedContainers, proc.PID)
 		}
 	}
 	
@@ -109,7 +102,7 @@ func Save() error {
 		return errors.New("Cannot Save process DB because lock is held by another goroutine.")	
 	}
 
-	binary, err := json.Marshal(TrackedProcesses)
+	binary, err := json.Marshal(TrackedContainers)
 	if err != nil {
 		return err
 	}

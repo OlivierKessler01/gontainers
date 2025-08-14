@@ -40,12 +40,12 @@ func (s *MyRuntime) ListPodSandbox(ctx context.Context, req *runtimeapi.ListPodS
     return nil, nil
 }
 func (s *MyRuntime) CreateContainer(ctx context.Context, req *runtimeapi.CreateContainerRequest) (*runtimeapi.CreateContainerResponse, error) {
-	pid, err := runContainer([]string{"tail", "/dev/null"})
+	id, err := createContainer(req.Config.Metadata.Name, "tail /dev/null")
 	if err != nil {
 		return nil, err
 	}
 
-	return &runtimeapi.CreateContainerResponse{ContainerId: string(pid)}, nil
+	return &runtimeapi.CreateContainerResponse{ContainerId: id}, nil
 }
 func (s *MyRuntime) StartContainer(ctx context.Context, req *runtimeapi.StartContainerRequest) (*runtimeapi.StartContainerResponse, error) {
     return nil, nil

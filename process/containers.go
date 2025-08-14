@@ -7,14 +7,61 @@ import (
 	"strings"
 	"syscall"
 	"text/tabwriter"
+	"github.com/google/uuid"
 )
 
-func createContainer(cmd []string) error {
-	//TODO:
-	return nil
+type Process struct {
+	PID int
+	cmd string
 }
 
-func runContainer(cmd []string) (int, error) {
+type ContainerStatus int
+
+const (
+    Created ContainerStatus = iota
+   	Running 
+   	Exited 
+)
+
+type Container struct {
+	name string
+	id string
+	Processes []*Process	
+	Cgroups []string
+	Namespaces []string
+	Status ContainerStatus 
+}
+
+func createContainer(name string, cmd string) (string, error) {
+	var processes []*Process
+	var id uuid.UUID
+	var process Process
+	var container *Container
+
+	_, ok := TrackedContainers[name]
+	if ok == true{
+		return "", fmt.Errorf("Cannot create container %s, this name is already used.", name)
+	}
+
+	process = Process {
+		cmd: cmd,
+		PID: 0,
+	}
+	processes = []*Process{&process}
+	id = uuid.New()
+
+	 container = &Container {
+		Processes: processes,
+		Status: Created,
+		id: id.String(),
+		name: name,
+	}
+	TrackedContainers[name] = container
+
+	return container.id, nil
+}
+
+func runContainer(cmd []string) (string, error) {
 	var cgroups []string
 	var namespaces []string
 
@@ -22,7 +69,7 @@ func runContainer(cmd []string) (int, error) {
 	defer ReleaseLock()
 	err := Load()
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	
 	proc := exec.Command(cmd[0], cmd[1:]...)
@@ -43,7 +90,7 @@ func runContainer(cmd []string) (int, error) {
 
 	namespaces, err = GetNamespaces(proc.Process.Pid)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	
 	Add(proc.Process.Pid, cgroups, namespaces)
@@ -81,7 +128,7 @@ func removeContainer(pid int) error {
     
 	fmt.Println("Container killed.")
 
-	delete(TrackedProcesses, pid)
+	delete(TrackedContainers, pid)
 
 	err = Save()
 	if err != nil {
@@ -103,7 +150,7 @@ func listContainers() error {
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
     fmt.Fprintln(w, "PID\tcgroups\tnamespaces")
-    for _, t := range TrackedProcesses {
+    for _, t := range TrackedContainers {
 		row := []string {
 			fmt.Sprintf("%d", t.PID),
 			strings.Join(t.Cgroups, ","),
