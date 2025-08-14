@@ -12,7 +12,8 @@ import (
 
 type Process struct {
 	PID int
-	cmd string
+	Cmd string
+	Args []string
 }
 
 type ContainerStatus int
@@ -26,17 +27,28 @@ const (
 type Container struct {
 	name string
 	id string
-	Processes []*Process	
+	Process *Process	
 	Cgroups []string
 	Namespaces []string
 	Status ContainerStatus 
 }
 
-func createContainer(name string, cmd string) (string, error) {
-	var processes []*Process
+func createContainer(name string, cmd []string) (string, error) {
 	var id uuid.UUID
 	var process Process
 	var container *Container
+
+	id = uuid.New()
+	if name == "" {
+		name = id.String()
+	}
+	
+	AcquireLock()
+	defer ReleaseLock()
+	err := Load()
+	if err != nil {
+		return "", err
+	}
 
 	_, ok := TrackedContainers[name]
 	if ok == true{
@@ -44,35 +56,64 @@ func createContainer(name string, cmd string) (string, error) {
 	}
 
 	process = Process {
-		cmd: cmd,
+		Cmd: cmd[0],
+		Args: cmd[1:],
 		PID: 0,
 	}
-	processes = []*Process{&process}
-	id = uuid.New()
 
-	 container = &Container {
-		Processes: processes,
+	container = &Container {
+		Process: &process,
 		Status: Created,
 		id: id.String(),
 		name: name,
 	}
 	TrackedContainers[name] = container
 
+	err = Save()
+	if err != nil {
+		panic("We create a container but can't write it into the DB, wroooong")
+	}
+
 	return container.id, nil
 }
 
-func runContainer(cmd []string) (string, error) {
+func runContainer(name string, cmd []string) (string, error) {
+	var containerId string
+	var err error 
+
+	containerId, err = createContainer(name, cmd)
+	if err != nil {
+		return containerId, err
+	}
+
+	err = startContainer(containerId)
+	if err != nil {
+		return containerId, err
+	}
+
+	return containerId, nil
+}
+
+
+func startContainer(containerId string) error {
 	var cgroups []string
 	var namespaces []string
+	var container *Container
+	var exist bool
 
 	AcquireLock()
 	defer ReleaseLock()
 	err := Load()
 	if err != nil {
-		return "", err
+		return err
+	}
+
+	container, exist = TrackedContainers[containerId]
+	if exist == false {
+		return fmt.Errorf("Cannot start container %s, container does not exist.", containerId)
 	}
 	
-	proc := exec.Command(cmd[0], cmd[1:]...)
+	proc := exec.Command(container.Process.Cmd, container.Process.Args...)
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
         Cloneflags: syscall.CLONE_NEWUTS |   // new UTS namespace (hostname)
@@ -90,19 +131,21 @@ func runContainer(cmd []string) (string, error) {
 
 	namespaces, err = GetNamespaces(proc.Process.Pid)
 	if err != nil {
-		return "", err
+		return err
 	}
+
+	container.Cgroups = cgroups
+	container.Namespaces = namespaces
 	
-	Add(proc.Process.Pid, cgroups, namespaces)
 	err = Save()
 	if err != nil {
-		panic("We launched a container but can't write it into the DB, wroooong")
+		panic("We started a container but can't write it into the DB, wroooong")
 	}
 
-	return proc.Process.Pid, err 
+	return nil 
 }
 
-func removeContainer(pid int) error {
+func removeContainer(containerId string) error {
 	AcquireLock()
 	defer ReleaseLock()
 
@@ -112,23 +155,24 @@ func removeContainer(pid int) error {
 		return err
 	}
 
-	if !IsTracked(pid) {
-		return fmt.Errorf("Container with PID %d doesn't exist.", pid)
+	if !IsTracked(containerId) {
+		return fmt.Errorf("Container with PID %d doesn't exist.", containerId)
 	}
 
+	pid := TrackedContainers[containerId].Process.PID
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		return err
-	}
-	err = process.Kill()
+		return fmt.Errorf("Cannot find container %s main process with PID %d", containerId, pid)
+	}	
 
+	// The main process and all its children, by sending signal to negative PID
+	err = syscall.Kill(-process.Pid, syscall.SIGKILL)
 	if err != nil {
         return fmt.Errorf("Failed to kill process: %s", err)
     } 
     
 	fmt.Println("Container killed.")
-
-	delete(TrackedContainers, pid)
+	delete(TrackedContainers, containerId)
 
 	err = Save()
 	if err != nil {

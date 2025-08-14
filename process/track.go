@@ -22,27 +22,10 @@ func getDBFilePath() string {
     return filepath.Join(cfg.DBPath, DB_FILE)
 }
 
-func Add(pid int, cgroups, namespaces []string) (TrackedContainers, error) {
-	t := TrackedContainers{
-        PID:        pid,
-        Cgroups:    cgroups,
-        Namespaces: namespaces,
-    }
-	TrackedContainers[pid] = t
-	return t, nil 
+func IsTracked(containerId string) bool {
+	_, exist := TrackedContainers[containerId]
+	return exist
 }
-
-
-func IsTracked(pid int) bool {
-    for _, proc := range TrackedContainers {
-		if proc.PID == pid {
-			return true
-		}
-    }
-	
-	return false
-}
-
 
 func Load() error {
 	held, err := IsLockHeld()
