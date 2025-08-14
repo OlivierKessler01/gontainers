@@ -25,8 +25,8 @@ const (
 )
 
 type Container struct {
-	name string
-	id string
+	Name string
+	Id string
 	Process *Process	
 	Cgroups []string
 	Namespaces []string
@@ -193,10 +193,11 @@ func listContainers() error {
 	}
 
     w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-    fmt.Fprintln(w, "PID\tcgroups\tnamespaces")
+    fmt.Fprintln(w, "ContainerName\tContainerId\tcgroups\tnamespaces")
     for _, t := range TrackedContainers {
 		row := []string {
-			fmt.Sprintf("%d", t.PID),
+			fmt.Sprintf("%d", t.Name),
+			fmt.Sprintf("%d", t.Id),
 			strings.Join(t.Cgroups, ","),
 			strings.Join(t.Namespaces, ","),
 		}
