@@ -26,7 +26,7 @@ build: # Usage `make build` Compile gontainers
 
 .PHONY:
 debug_run: build # Usage `make debug_run` Step debug the run command
-	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) dlv debug ./main.go -- run tail -f /dev/null --verbose
+	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) dlv debug ./main.go -- run --verbose --command="tail -f /dev/null"
 
 .PHONY:
 debug_list: build # Usage `make debug_run` Step debug the list command

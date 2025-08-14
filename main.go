@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/google/uuid"
@@ -23,7 +24,7 @@ func run(args []string) {
 	verboseOutArgs = make([]string, 0)
 
 	for _, arg := range os.Args {
-		if arg == "--verbose=true" || arg == "-v" {
+		if arg == "--verbose" || arg == "-v" {
 			logLevel = slog.LevelInfo
 		} else {
 			verboseOutArgs = append(verboseOutArgs, arg)
@@ -66,6 +67,7 @@ func run(args []string) {
 			},
 		},
 	}
+	runtime.Breakpoint()
 
 	if err := cmd.Run(cancelleableContext, args); err != nil {
 		slog.Error(fmt.Sprintf("%s", err))

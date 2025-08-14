@@ -66,9 +66,9 @@ func Load() error {
         }
     }
 
-	for _,proc := range TrackedContainers {
-		if _, present := systemPids[proc.PID]; !present {
-			delete(TrackedContainers, proc.PID)
+	for containerId,container := range TrackedContainers {
+		if _, present := systemPids[container.Process.PID]; !present {
+			delete(TrackedContainers, containerId)
 		}
 	}
 	

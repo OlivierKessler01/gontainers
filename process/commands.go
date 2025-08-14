@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
-	"strings"
+	"runtime"
+	//"strings"
 
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
@@ -51,10 +51,12 @@ func ServeGRPC(ctx context.Context, cmd *cli.Command) error {
 
 //Run a container
 func Run(ctx context.Context, cmd *cli.Command) error {
-	args := cmd.Args()
-	var procArgs []string
-	procArgs = strings.Fields(args.First())
-	return runContainer(procArgs)
+	//args := cmd.Args()
+	runtime.Breakpoint()
+	//var procArgs []string
+	//procArgs = strings.Fields(args.First())
+	//return runContainer(args.Get[0], procArgs)
+	return nil
 }
 
 //List containers
@@ -86,11 +88,8 @@ func Init(ctx context.Context, cmd *cli.Command) error {
 
 //Remove containers
 func Remove(ctx context.Context, cmd *cli.Command) error {
-	pid, err := strconv.Atoi(cmd.Args().First())
-	if err != nil {
-		return err
-	}
-	return removeContainer(pid)
+	containerId := cmd.Args().First()
+	return removeContainer(containerId)
 }
 
 

@@ -64,8 +64,8 @@ func createContainer(name string, cmd []string) (string, error) {
 	container = &Container {
 		Process: &process,
 		Status: Created,
-		id: id.String(),
-		name: name,
+		Id: id.String(),
+		Name: name,
 	}
 	TrackedContainers[name] = container
 
@@ -74,7 +74,7 @@ func createContainer(name string, cmd []string) (string, error) {
 		panic("We create a container but can't write it into the DB, wroooong")
 	}
 
-	return container.id, nil
+	return container.Id, nil
 }
 
 func runContainer(name string, cmd []string) (string, error) {
