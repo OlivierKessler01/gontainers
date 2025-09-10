@@ -6,19 +6,17 @@ import (
 )
 
 func Test(t *testing.T) {
-	args := os.Args[0:1] // Name of the program.
-	args = append(args, []string{"run", "tail -f /dev/null"}...)
-	run(args)
+	testCases := [][]string{
+		{"run", "--name=test", "--command=tail -f /dev/null"},
+		{"list"},
+		{"remove"},
+		{"list"},
+	}
 
-	args = os.Args[0:1] // Name of the program.
-	args = append(args, "list")
-	run(args)
-
-	args = os.Args[0:1] // Name of the program.
-	args = append(args, "remove")
-	run(args)
-
-	args = os.Args[0:1] // Name of the program.
-	args = append(args, "list")
-	run(args)
+	for _, args := range testCases {
+		progArgs := append(os.Args[0:1], args...)
+		if err := run(progArgs); err != nil {
+			t.Fatalf("Command %v failed: %v", args, err)
+		}
+	}
 }

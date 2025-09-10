@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+//	"runtime"
 	"strings"
 	"syscall"
 	"text/tabwriter"
+
 	"github.com/google/uuid"
 )
 
@@ -80,11 +82,12 @@ func createContainer(name string, cmd []string) (string, error) {
 func runContainer(name string, cmd []string) (string, error) {
 	var containerId string
 	var err error 
-
+	
 	containerId, err = createContainer(name, cmd)
 	if err != nil {
 		return containerId, err
 	}
+	//runtime.Breakpoint()
 
 	err = startContainer(containerId)
 	if err != nil {
@@ -156,7 +159,7 @@ func removeContainer(containerId string) error {
 	}
 
 	if !IsTracked(containerId) {
-		return fmt.Errorf("Container with PID %d doesn't exist.", containerId)
+		return fmt.Errorf("Container with PID %s doesn't exist.", containerId)
 	}
 
 	pid := TrackedContainers[containerId].Process.PID
@@ -185,7 +188,7 @@ func removeContainer(containerId string) error {
 func listContainers() error {
 	AcquireLock()
 	defer ReleaseLock()
-
+	
 	err := Load()
 
 	if err != nil {
@@ -196,8 +199,8 @@ func listContainers() error {
     fmt.Fprintln(w, "ContainerName\tContainerId\tcgroups\tnamespaces")
     for _, t := range TrackedContainers {
 		row := []string {
-			fmt.Sprintf("%d", t.Name),
-			fmt.Sprintf("%d", t.Id),
+			fmt.Sprintf("%s", t.Name),
+			fmt.Sprintf("%s", t.Id),
 			strings.Join(t.Cgroups, ","),
 			strings.Join(t.Namespaces, ","),
 		}

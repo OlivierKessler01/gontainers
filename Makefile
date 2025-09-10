@@ -5,6 +5,7 @@ RED    := \033[0;31m
 GREEN  := \033[0;32m
 YELLOW := \033[0;33m
 NC     := \033[0m
+DLVFLAGS := --build-flags=""
 
 
 help: 
@@ -26,11 +27,13 @@ build: # Usage `make build` Compile gontainers
 
 .PHONY:
 debug_run: build # Usage `make debug_run` Step debug the run command
-	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) dlv debug ./main.go -- run --verbose --command="tail -f /dev/null"
+	@docker rm -f debug_run || true
+	@sudo env GOPATH=$(GOPATH) PATH=$(PATH) dlv debug $(DLVFLAGS) \
+		./main.go -- run --verbose --name="debug_run" --command="tail -f /dev/null"
 
 .PHONY:
 debug_list: build # Usage `make debug_run` Step debug the list command
-	~/go/bin/dlv debug ./main.go -- list 
+	~/go/bin/dlv debug $(DLVFLAGS) ./main.go -- list 
 
 .PHONY:
 install_cri_tools:

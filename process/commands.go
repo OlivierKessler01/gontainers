@@ -7,9 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"runtime"
-	//"strings"
-
+	"strings"
 	"github.com/urfave/cli/v3"
 	"google.golang.org/grpc"
 )
@@ -51,12 +49,15 @@ func ServeGRPC(ctx context.Context, cmd *cli.Command) error {
 
 //Run a container
 func Run(ctx context.Context, cmd *cli.Command) error {
-	//args := cmd.Args()
-	runtime.Breakpoint()
-	//var procArgs []string
-	//procArgs = strings.Fields(args.First())
-	//return runContainer(args.Get[0], procArgs)
-	return nil
+	var command []string
+	var name string
+	command = strings.Fields(cmd.String("command"))
+	name = cmd.String("name")
+	id, err := runContainer(name, command)
+	if err == nil {
+		fmt.Println("Container launched %d", id)
+	}
+	return err 
 }
 
 //List containers

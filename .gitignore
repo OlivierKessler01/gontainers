@@ -6,3 +6,5 @@ vendor
 state.img
 user-data
 meta-data
+debug/
+**__debug**

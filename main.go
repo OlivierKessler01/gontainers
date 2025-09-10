@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	"github.com/google/uuid"
@@ -14,34 +13,53 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func run(args []string) {
+func run(args []string) (error) {
 	var logLevel slog.Level = slog.LevelError
-	var verboseOutArgs []string
 
-	cancelleableContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	cancelleableContext, stop := signal.NotifyContext(
+		context.Background(), 
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
 	defer stop()
-
-	verboseOutArgs = make([]string, 0)
 
 	for _, arg := range os.Args {
 		if arg == "--verbose" || arg == "-v" {
 			logLevel = slog.LevelInfo
-		} else {
-			verboseOutArgs = append(verboseOutArgs, arg)
-		}
+			break
+		} 	
 	}
-
-	args = verboseOutArgs
 
 	slog.SetLogLoggerLevel(logLevel)
 	process.CURRENT_GOROUTINE_ID = uuid.New()
 
 	cmd := &cli.Command{
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "verbose",
+				Aliases: []string{"v"},
+				Usage:   "Enable verbose logging",
+			},
+		},
 		Commands: []*cli.Command{
 			{
-				Name:   "run",
-				Usage:  "Run a container, get a PID.",
+				Name:  "run",
+				Usage: "Run a container, get a PID.",
 				Action: process.Run,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     "name",
+						Aliases:  []string{"n"},
+						Usage:    "Name of the container",
+						Required: true, // ensures user must provide it
+					},
+					&cli.StringFlag{
+						Name:     "command",
+						Aliases:  []string{"c"},
+						Usage:    "Command to run in the container",
+						Required: true,
+					},
+				},
 			},
 			{
 				Name:   "list",
@@ -55,7 +73,7 @@ func run(args []string) {
 			},
 			{
 				Name: "server",
-				Usage: "Server the CR-API gRPC server.\n" +
+				Usage: "Serve the CR-API gRPC server.\n" +
 					"You can then use `crictl --runtime-endpoint " +
 					"unix:///var/run/gontainers.sock version` to test it.",
 				Action: process.ServeGRPC,
@@ -67,12 +85,13 @@ func run(args []string) {
 			},
 		},
 	}
-	runtime.Breakpoint()
 
 	if err := cmd.Run(cancelleableContext, args); err != nil {
 		slog.Error(fmt.Sprintf("%s", err))
-		return
+		return err
 	}
+
+	return nil
 }
 
 func main() {
